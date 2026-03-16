@@ -3,6 +3,7 @@
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import express from "express";
 import { randomUUID } from "node:crypto";
 import { createServer } from "./server.js";
@@ -61,10 +62,10 @@ export async function main() {
 
         // Create and connect server first
         const server = createServer();
-        // The transport will have sessionId after initialization
-        await server.connect(
-          transport as StreamableHTTPServerTransport & { sessionId: string }
-        );
+        // Cast to Transport to avoid exactOptionalPropertyTypes incompatibility:
+        // StreamableHTTPServerTransport's onclose getter returns (() => void) | undefined
+        // which conflicts with Transport's onclose?: () => void under exactOptionalPropertyTypes.
+        await server.connect(transport as Transport);
 
         // Log after successful connection
         logger.info("New MCP session server connected", {
